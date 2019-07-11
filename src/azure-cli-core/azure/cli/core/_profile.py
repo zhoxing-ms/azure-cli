@@ -24,7 +24,7 @@ from azure.cli.core.cloud import get_active_cloud, set_cloud_subscription
 from knack.log import get_logger
 from knack.util import CLIError
 
-from msal_extensions import get_protected_token_cache
+from msal_extensions import TokenCache
 
 logger = get_logger(__name__)
 
@@ -76,6 +76,15 @@ _AZ_LOGIN_MESSAGE = "Please run 'az login' to setup account."
 
 _MSAL_CLIENT_CREDENTIALS_CAT = 'ClientCredentials'
 _MSAL_ACCOUNT_USERNAME = 'username'
+
+_HOMEDIR = os.path.expanduser('~')
+if os.sys.platform.startswith('win32'):
+    _CACHE_LOCATION = os.path.join(os.getenv('LOCALAPPDATA', _HOMEDIR), '.IdentityService', 'msal.cache')
+elif os.sys.platform.startswith('darwin'):
+    _CACHE_LOCATION = os.path.join(_HOMEDIR, '.IdentityService', 'msal.cache')
+else:
+    # Until a Linux/BSD backend is written, we don't want to step on the shared cache.
+    _CACHE_LOCATION = os.path.join(_HOMEDIR, '.azure', '.IdentityService', 'msal.cache') # Until a Linux backend is writt
 
 def _get_sp_key(sp_id, tenant_id):
     return sp_id + '.' + tenant_id
@@ -993,7 +1002,7 @@ class CredsCache(object):
         if self._adal_token_cache is None:
             import msal
             # all_entries = open(self._token_file)
-            self._adal_token_cache = get_protected_token_cache()
+            self._adal_token_cache = TokenCache(cache_location=_CACHE_LOCATION)
             temp = json.dumps(_load_tokens_from_file(self._token_file))
             self._adal_token_cache.deserialize(temp)
         return self._adal_token_cache
