@@ -24,6 +24,7 @@ from azure.cli.core.cloud import get_active_cloud, set_cloud_subscription
 from knack.log import get_logger
 from knack.util import CLIError
 
+import msal
 from msal_extensions import TokenCache
 
 logger = get_logger(__name__)
@@ -86,8 +87,10 @@ else:
     # Until a Linux/BSD backend is written, we don't want to step on the shared cache.
     _CACHE_LOCATION = os.path.join(_HOMEDIR, '.azure', '.IdentityService', 'msal.cache') # Until a Linux backend is writt
 
+
 def _get_sp_key(sp_id, tenant_id):
     return sp_id + '.' + tenant_id
+
 
 def load_subscriptions(cli_ctx, all_clouds=False, refresh=False):
     profile = Profile(cli_ctx=cli_ctx)
@@ -116,7 +119,6 @@ def _create_scopes(cli_ctx, resource=None, is_service_principal=False):
 def _create_aad_application(cli_ctx, tenant=None, cache=None,
                             client_id=None, client_credential=None):
 
-    import msal
     tenant = tenant or 'organizations'
     authority = cli_ctx.cloud.endpoints.active_directory + '/' + tenant
     if client_id and client_credential:
@@ -774,13 +776,12 @@ class MsiAccountTypes(object):
 
 
 class SubscriptionFinder(object):
-    '''finds all subscriptions for a user or service principal'''
+    """finds all subscriptions for a user or service principal"""
 
     def __init__(self, cli_ctx, aad_application_factory, adal_token_cache, arm_client_factory=None):
-
         self._adal_token_cache = adal_token_cache
         self._aad_application_factory = aad_application_factory
-        self.user_home_account = None # will figure out after log user in
+        self.user_home_account = None  # will figure out after log user in
         self.cli_ctx = cli_ctx
 
         def create_arm_client_factory(credentials):
@@ -791,8 +792,10 @@ class SubscriptionFinder(object):
             from azure.cli.core._debug import change_ssl_cert_verification
             client_type = get_client_class(ResourceType.MGMT_RESOURCE_SUBSCRIPTIONS)
             api_version = get_api_version(cli_ctx, ResourceType.MGMT_RESOURCE_SUBSCRIPTIONS)
-            return change_ssl_cert_verification(client_type(credentials, api_version=api_version,
-                                                            base_url=self.cli_ctx.cloud.endpoints.resource_manager))
+            return change_ssl_cert_verification(client_type(
+                credentials,
+                api_version=api_version,
+                base_url=self.cli_ctx.cloud.endpoints.resource_manager))
 
         self._arm_client_factory = create_arm_client_factory
         self.tenants = []
@@ -833,11 +836,11 @@ class SubscriptionFinder(object):
         results = _get_authorization_code(scopes, authority_url)
 
         if not results.get('code'):
-            raise CLIError('Login failed')  # error detail is already displayed through previous steps
+            raise CLIError('Login failed')  # error detail is already displayed via previous steps
 
         # exchange the code for the token
         app = self._create_aad_app(tenant)
-        
+
         token_entry = app.acquire_token_by_authorization_code(results['code'], scopes,
                                                               results['reply_url'])
         self.user_home_account = self._find_user_home_account(token_entry)
@@ -904,7 +907,7 @@ class SubscriptionFinder(object):
             try:
                 temp_credentials = temp_app.acquire_token_silent(scopes=_create_scopes(self.cli_ctx, resource),
                                                                  account=self.user_home_account)
-            except adal.AdalError as ex:
+            except Exception as ex:
                 # because user creds went through the 'common' tenant, the error here must be
                 # tenant specific, like the account was disabled. For such errors, we will continue
                 # with other tenants.
@@ -1000,7 +1003,6 @@ class CredsCache(object):
 
     def load_adal_token_cache(self):
         if self._adal_token_cache is None:
-            import msal
             # all_entries = open(self._token_file)
             self._adal_token_cache = TokenCache(cache_location=_CACHE_LOCATION)
             temp = json.dumps(_load_tokens_from_file(self._token_file))
