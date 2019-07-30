@@ -85,7 +85,7 @@ elif os.sys.platform.startswith('darwin'):
     _CACHE_LOCATION = os.path.join(_HOMEDIR, '.IdentityService', 'msal.cache')
 else:
     # Until a Linux/BSD backend is written, we don't want to step on the shared cache.
-    _CACHE_LOCATION = os.path.join(_HOMEDIR, '.azure', '.IdentityService', 'msal.cache') # Until a Linux backend is writt
+    _CACHE_LOCATION = os.path.join(_HOMEDIR, '.azure', '.IdentityService', 'msal.cache')
 
 
 def _get_sp_key(sp_id, tenant_id):
@@ -110,7 +110,7 @@ def _get_authority_url(cli_ctx, tenant):
     return authority_url, is_adfs
 
 
-def _create_scopes(cli_ctx, resource=None, is_service_principal=False):
+def _create_scopes(cli_ctx, resource=None):
     resource = resource or cli_ctx.cloud.endpoints.resource_manager
     scope = resource + '/.default'
     return [scope]
@@ -256,8 +256,10 @@ class Profile(object):
             if not subscriptions:
                 return []
 
-        consolidated = self._normalize_properties(subscription_finder.user_home_account[_MSAL_ACCOUNT_USERNAME], subscriptions,
-                                                  is_service_principal, bool(use_cert_sn_issuer))
+        consolidated = self._normalize_properties(subscription_finder.user_home_account[_MSAL_ACCOUNT_USERNAME],
+                                                  subscriptions,
+                                                  is_service_principal,
+                                                  bool(use_cert_sn_issuer))
 
         self._set_subscriptions(consolidated)
         # use deepcopy as we don't want to persist these changes to file.
@@ -488,6 +490,8 @@ class Profile(object):
         self._storage[_SUBSCRIPTIONS] = subscriptions
         self._creds_cache.remove_cached_creds(user_or_sp)
 
+        # TODO: call msal.remove_account to clear the Shared Token Cache of this account.
+
     def logout_all(self):
         self._storage[_SUBSCRIPTIONS] = []
         self._creds_cache.remove_all_cached_creds()
@@ -669,7 +673,8 @@ class Profile(object):
             subscriptions = []
             try:
                 if is_service_principal:
-                    sp_auth = ServicePrincipalAuth(self._creds_cache.retrieve_secret_of_service_principal(user_name, tenant))
+                    sp_auth = ServicePrincipalAuth(
+                        self._creds_cache.retrieve_secret_of_service_principal(user_name, tenant))
                     subscriptions = subscription_finder.find_from_service_principal_id(user_name, sp_auth, tenant,
                                                                                        self._ad_resource_uri)
                 else:
@@ -907,7 +912,7 @@ class SubscriptionFinder(object):
             try:
                 temp_credentials = temp_app.acquire_token_silent(scopes=_create_scopes(self.cli_ctx, resource),
                                                                  account=self.user_home_account)
-            except Exception as ex:
+            except ValueError as ex:
                 # because user creds went through the 'common' tenant, the error here must be
                 # tenant specific, like the account was disabled. For such errors, we will continue
                 # with other tenants.
@@ -1011,17 +1016,17 @@ class CredsCache(object):
 
     def save_service_principal_cred(self, sp_entry_key, sp_credential):
         self.load_adal_token_cache()
-        self.adal_token_cache._cache.setdefault(_MSAL_CLIENT_CREDENTIALS_CAT,{})[sp_entry_key] = sp_credential
+        self.adal_token_cache._cache.setdefault(_MSAL_CLIENT_CREDENTIALS_CAT, {})[sp_entry_key] = sp_credential
         self.persist_cached_creds()
 
     def remove_cached_creds(self, user_or_sp):  # TODO, ask AAD folks for support
-        state_changed = False
-        # clear AAD tokens
-        tokens = self.adal_token_cache.find({_TOKEN_ENTRY_USER_ID: user_or_sp})
-        if tokens:
-            state_changed = True
-            self.adal_token_cache.remove(tokens)
+        app = _create_aad_application(self._cli_ctx, None, self.adal_token_cache)
+        accounts = app.get_accounts(user_or_sp)
 
+        for acc in accounts:
+            app.remove_account(acc)
+
+        state_changed = False
         # clear service principal creds
         matched = [x for x in self._service_principal_creds
                    if x[_SERVICE_PRINCIPAL_ID] == user_or_sp]
@@ -1069,7 +1074,7 @@ class ServicePrincipalAuth(object):
         }
         app = _create_aad_application(cli_ctx, tenant, cache=token_cache,
                                       client_id=client_id, client_credential=client_credential)
-        return app.acquire_token_for_client(_create_scopes(cli_ctx, resource, is_service_principal=True))
+        return app.acquire_token_for_client(_create_scopes(cli_ctx, resource))
 
     def get_entry_to_persist(self, sp_id, tenant):
         if hasattr(self, 'secret'):
