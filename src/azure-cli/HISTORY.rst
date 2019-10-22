@@ -3,13 +3,44 @@
 Release History
 ===============
 
+**SQL**
+
+* Added "--compute-model", "--auto-pause-delay", and "--min-capacity" parameters to support CRUD operations for new SQL Database offering: Serverless compute model."
+
 **ACR**
 
 * Added a preview parameter `--pack-image-tag` to command `az acr pack build`.
 
+**AppConfig**
+
+* Minor bug fix for appconfig kv export to file command. Stop reading dest file contents during export.
+
 **AppService**
 
+* Fixing an issue where webapp config ssl bind operation was removing existing tags from the resource
 * Added "--build remote" flag for "az functionapp deployment source config-zip" to support remote build action during function app deployment.
+* Change default node version on function apps to ~10 for Windows
+* Add --runtime-version property to `az functionapp create`
+
+**ARM**
+
+* deployment/group deployment validate: Add --handle-extended-json-format parameter to support multiline and comments in json template when deployment.
+
+**Compute**
+
+* vm create: Add warning when specifying accelerated networking and an existing NIC together.
+* [BREAKING CHANGE] vm extension set: Fix bug where users could not set an extension on a VM with --ids.
+* New commands `az vm image terms accept/cancel/show` to manage Azure Marketplace image terms.
+
+**CosmosDB**
+
+* [BREAKING] sql container create: Change --partition-key-path to required parameter
+* [BREAKING] gremlin graph create: Change --partition-key-path to required parameter
+* sql container create: Add --unique-key-policy and --conflict-resolution-policy
+* sql container create/update: Update the --idx default schema
+* gremlin graph create: Add --conflict-resolution-policy
+* gremlin graph create/update: Update the --idx default schema
+* Fix typo in help message
 
 **IoT**
 
@@ -29,6 +60,14 @@ Release History
 
 * Fix: `az account get-access-token --resource-type ms-graph` not working
 * Remove warning from `az login`
+
+**RBAC**
+
+* Fix #10807: `az ad app update --id {} --display-name {}` doesn't work
+
+**ServiceFabric**
+
+* az sf cluster create: fix #10916 modify service fabric linux and windows template.json compute vmss from standard to managed disks
 
 2.0.75
 ++++++
@@ -74,8 +113,6 @@ Release History
 * vm create: Use standard public IP SKU automatically when using zones.
 * vm create: Compose a valid computer name from VM name if computer name is not provided.
 * vm create: Add --workspace to enable log analytics workspace automatically.
-* vm create: Add warning when specifying accelerated networking and an existing NIC together.
-* [BREAKING CHANGE] vm extension set: Fix bug where users could not set an extension on a VM with --ids.
 * vmss create: Add --computer-name-prefix parameter to support custom computer name prefix of virtual machines in the VMSS.
 * Update galleries API version to 2019-07-01.
 
@@ -86,16 +123,6 @@ Release History
 **Monitor**
 
 * az monitor log-analytics workspace: Support CRUD for Azure log analytics workspace.
-
-**CosmosDB**
-
-* [BREAKING] sql container create: Change --partition-key-path to required parameter
-* [BREAKING] gremlin graph create: Change --partition-key-path to required parameter
-* sql container create: Add --unique-key-policy and --conflict-resolution-policy
-* sql container create/update: Update the --idx default schema
-* gremlin graph create: Add --conflict-resolution-policy
-* gremlin graph create/update: Update the --idx default schema
-* Fix typo in help message
 
 **Network**
 
@@ -232,6 +259,8 @@ Release History
 * az network application-gateway ssl-cert: Fix #8244. Add support for setting key vault id in application-gateway ssl-cert.
 * az network express-route peering peer-connection: Fix #9404. Onboard `show` and `list` command for Azure express route peering peer connection resource.
 * az network vnet-gateway create/update: Fix #9327. Support `--custom-routes` argument to set custom routes address space for VNet gateway and VPN client.
+* az network express-route port identity: Fix #10747. Support to configure identity.
+* az network express-route port link update: Fix #10747. Support to configure MACsec and enable/disable admin state.
 
 **Policy**
 
