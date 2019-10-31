@@ -381,7 +381,7 @@ jobs:
     env:
       REDUCE_SDK: 'True'
 
-- job: RunAutomationFullPython3.8
+- job: RunAutomationFullPython3_8
   displayName: Run Automation, Python 3.8
   dependsOn: BuildPythonWheel
   timeoutInMinutes: 90
