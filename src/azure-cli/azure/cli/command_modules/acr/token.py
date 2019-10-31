@@ -6,7 +6,7 @@
 from msrestazure.azure_exceptions import CloudError
 from azure.cli.core.commands import LongRunningOperation
 from azure.cli.core.util import CLIError
-from ._utils import get_resource_group_name_by_registry_name, validate_premium_registry, parse_actions_from_repositories
+from ._utils import get_resource_group_name_by_registry_name, parse_actions_from_repositories
 
 SCOPE_MAPS = 'scopeMaps'
 TOKENS = 'tokens'
@@ -29,7 +29,6 @@ def acr_token_create(cmd,
         raise CLIError("usage error: --repository | --scope-map-name")
 
     resource_group_name = get_resource_group_name_by_registry_name(cmd.cli_ctx, registry_name, resource_group_name)
-    validate_premium_registry(cmd, registry_name, resource_group_name)
 
     logger = get_logger(__name__)
     if repository_actions_list:
@@ -69,14 +68,14 @@ def _create_default_scope_map(cmd, resource_group_name, registry_name, token_nam
         # for command idempotency, if the actions are the same, we accept it
         if sorted(existing_scope_map.actions) == sorted(actions):
             return existing_scope_map.id
-        raise CLIError('The default scope map was already configured with different respository permissions.'
+        raise CLIError('The default scope map was already configured with different repository permissions.'
                        '\nPlease use "az acr scope-map update -r {} -n {} --add <REPO> --remove <REPO>" to update.'
                        .format(registry_name, scope_map_name))
     except CloudError:
         pass
-    logger.warning('Creating a scope map of "%s" for provided respository permissions.', scope_map_name)
+    logger.warning('Creating a scope map "%s" for provided repository permissions.', scope_map_name)
     poller = scope_map_client.create(resource_group_name, registry_name, scope_map_name,
-                                     actions, "Token {}'s scope map".format(token_name))
+                                     actions, "Created by token: {}".format(token_name))
     scope_map = LongRunningOperation(cmd.cli_ctx)(poller)
     return scope_map.id
 
