@@ -224,7 +224,7 @@ def build_msi_role_assignment(vm_vmss_name, vm_vmss_resource_id, role_definition
         assignment_type = 'Microsoft.Authorization/roleAssignments'
 
     # pylint: disable=line-too-long
-    msi_rp_api_version = '2015-08-31-PREVIEW'
+    msi_rp_api_version = '2019-07-01'
     return {
         'name': name,
         'type': assignment_type,
@@ -234,7 +234,7 @@ def build_msi_role_assignment(vm_vmss_name, vm_vmss_resource_id, role_definition
         ],
         'properties': {
             'roleDefinitionId': role_definition_id,
-            'principalId': "[reference('{}/providers/Microsoft.ManagedIdentity/Identities/default', '{}').principalId]".format(
+            'principalId': "[reference('{}', '{}', 'Full').identity.principalId]".format(
                 vm_vmss_resource_id, msi_rp_api_version),
             'scope': identity_scope
         }
@@ -651,7 +651,7 @@ def build_vmss_resource(cmd, name, naming_prefix, location, tags, overprovision,
                         single_placement_group=None, platform_fault_domain_count=None, custom_data=None,
                         secrets=None, license_type=None, zones=None, priority=None, eviction_policy=None,
                         application_security_groups=None, ultra_ssd_enabled=None, proximity_placement_group=None,
-                        terminate_notification_time=None, max_billing=None, orchestration_mode=None):
+                        terminate_notification_time=None, max_billing=None):
 
     # Build IP configuration
     ip_configuration = {
@@ -851,22 +851,6 @@ def build_vmss_resource(cmd, name, naming_prefix, location, tags, overprovision,
     }
     if zones:
         vmss['zones'] = zones
-    # vmss without vm profile
-    if orchestration_mode == 'VM':
-        if platform_fault_domain_count is None:
-            platform_fault_domain_count = 2
-        vmss = {
-            'type': 'Microsoft.Compute/virtualMachineScaleSets',
-            'name': name,
-            'location': location,
-            'tags': tags,
-            'apiVersion': cmd.get_api_version(ResourceType.MGMT_COMPUTE, operation_group='virtual_machine_scale_sets'),
-            'properties': {
-                'singlePlacementGroup': True,
-                'provisioningState': 0,
-                'platformFaultDomainCount': platform_fault_domain_count
-            }
-        }
     return vmss
 
 
