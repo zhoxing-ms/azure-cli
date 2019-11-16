@@ -381,7 +381,7 @@ jobs:
     env:
       REDUCE_SDK: 'True'
 
-- job: RunAutomationFullPython3_8
+- job: RunAutomationReducedPython3_8
   displayName: Run Automation, Python 3.8
   dependsOn: BuildPythonWheel
   timeoutInMinutes: 90
@@ -405,6 +405,8 @@ jobs:
     inputs:
       targetType: 'filePath'
       filePath: ./scripts/ci/test_automation.sh
+    env:
+      REDUCE_SDK: 'True'  
 
 - job: RunAutomationReduced20190301
   displayName: Run Automation Reduced
