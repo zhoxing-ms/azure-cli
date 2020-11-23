@@ -17,6 +17,7 @@ import logging
 
 import six
 from six.moves.urllib.request import urlopen  # pylint: disable=import-error
+from azure.cli.core._environment import get_config_dir
 from knack.log import get_logger
 from knack.util import CLIError, to_snake_case
 
@@ -1198,3 +1199,73 @@ def scopes_to_resource(scopes):
         scope = scope[:-len("/.default")]
 
     return scope
+
+
+def log_cmd_history(command, args):
+    import os
+    from knack.util import ensure_dir
+
+    if not args or not command:
+        return
+
+    base_dir = os.path.join(get_config_dir(), 'recommendation')
+    ensure_dir(base_dir)
+
+    file_path = os.path.join(base_dir, 'cmd_history.log')
+    if not os.path.exists(file_path):
+        with open(file_path, 'w') as fd:
+            fd.write('')
+
+    lines = []
+    with open(file_path, 'r') as fd:
+        lines = fd.readlines()
+        lines = [x.strip('\n') for x in lines if x]
+
+    with open(file_path, 'w') as fd:
+        command_info = {'command': command}
+        params = []
+        for arg in args:
+            if arg.startswith('-'):
+                params.append(arg)
+        if params:
+            command_info['arguments'] = params
+
+        lines.append(json.dumps(command_info))
+        if len(lines) > 15:
+            lines = lines[-15:]
+        fd.write('\n'.join(lines))
+
+
+def log_latest_error_info(error_info, error_type):
+    import os
+    from knack.util import ensure_dir
+    from azure.cli.core.azclierror import RecommendationError
+
+    if not error_info:
+        return
+
+    # az next exception will not be recorded
+    if error_type and RecommendationError == error_type:
+        return
+
+    base_dir = os.path.join(get_config_dir(), 'recommendation')
+
+    ensure_dir(base_dir)
+
+    with open(os.path.join(base_dir, 'exception_history.log'), 'w+') as fd:
+        print(remove_cmd_chars(error_info), file=fd)
+
+
+def clean_exception_history():
+    import os
+    base_dir = os.path.join(get_config_dir(), 'recommendation')
+    exception_file_path = os.path.join(base_dir, 'exception_history.log')
+
+    if os.path.exists(exception_file_path):
+        os.remove(exception_file_path)
+
+
+def remove_cmd_chars(s):
+    if isinstance(s, str):
+        return s.replace("'", '|').replace('"', '|').replace('\r\n', ' ').replace('\n', ' ')
+    return s
