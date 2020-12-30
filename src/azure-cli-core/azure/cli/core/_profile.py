@@ -641,7 +641,7 @@ class Profile:
                 username_or_sp_id, account[_TENANT_ID], resource)
             return None, token_entry.get(_REFRESH_TOKEN), token_entry[_ACCESS_TOKEN], str(account[_TENANT_ID])
 
-        sp_secret = self._creds_cache.retrieve_secret_of_service_principal(username_or_sp_id)
+        sp_secret = self._creds_cache.retrieve_cred_for_service_principal(username_or_sp_id)
         return username_or_sp_id, sp_secret, None, str(account[_TENANT_ID])
 
     def get_raw_token(self, resource=None, subscription=None, tenant=None):
@@ -706,7 +706,7 @@ class Profile:
             subscriptions = []
             try:
                 if is_service_principal:
-                    sp_auth = ServicePrincipalAuth(self._creds_cache.retrieve_secret_of_service_principal(user_name))
+                    sp_auth = ServicePrincipalAuth(self._creds_cache.retrieve_cred_for_service_principal(user_name))
                     subscriptions = subscription_finder.find_from_service_principal_id(user_name, sp_auth, tenant,
                                                                                        self._ad_resource_uri)
                 else:
@@ -752,7 +752,7 @@ class Profile:
             user_type = account[_USER_ENTITY].get(_USER_TYPE)
             if user_type == _SERVICE_PRINCIPAL:
                 result['clientId'] = account[_USER_ENTITY][_USER_NAME]
-                sp_auth = ServicePrincipalAuth(self._creds_cache.retrieve_secret_of_service_principal(
+                sp_auth = ServicePrincipalAuth(self._creds_cache.retrieve_cred_for_service_principal(
                     account[_USER_ENTITY][_USER_NAME]))
                 secret = getattr(sp_auth, 'secret', None)
                 if secret:
@@ -848,13 +848,10 @@ class SubscriptionFinder:
 
     def find_from_user_account(self, username, password, tenant, resource):
         context = self._create_auth_context(tenant)
-        try:
-            if password:
-                token_entry = context.acquire_token_with_username_password(resource, username, password, _CLIENT_ID)
-            else:  # when refresh account, we will leverage local cached tokens
-                token_entry = context.acquire_token(resource, username, _CLIENT_ID)
-        except Exception as err:  # pylint: disable=broad-except
-            _login_exception_handler(err)
+        if password:
+            token_entry = context.acquire_token_with_username_password(resource, username, password, _CLIENT_ID)
+        else:  # when refresh account, we will leverage local cached tokens
+            token_entry = context.acquire_token(resource, username, _CLIENT_ID)
 
         if not token_entry:
             return []
@@ -875,11 +872,8 @@ class SubscriptionFinder:
 
         # exchange the code for the token
         context = self._create_auth_context(tenant)
-        try:
-            token_entry = context.acquire_token_with_authorization_code(results['code'], results['reply_url'],
-                                                                        resource, _CLIENT_ID, None)
-        except Exception as err:  # pylint: disable=broad-except
-            _login_exception_handler(err)
+        token_entry = context.acquire_token_with_authorization_code(results['code'], results['reply_url'],
+                                                                    resource, _CLIENT_ID, None)
         self.user_id = token_entry[_TOKEN_ENTRY_USER_ID]
         logger.warning("You have logged in. Now let us find all the subscriptions to which you have access...")
         if tenant is None:
@@ -890,10 +884,7 @@ class SubscriptionFinder:
 
     def find_through_interactive_flow(self, tenant, resource):
         context = self._create_auth_context(tenant)
-        try:
-            code = context.acquire_user_code(resource, _CLIENT_ID)
-        except Exception as err:  # pylint: disable=broad-except
-            _login_exception_handler(err)
+        code = context.acquire_user_code(resource, _CLIENT_ID)
         logger.warning(code['message'])
         token_entry = context.acquire_token_with_device_code(resource, code, _CLIENT_ID)
         self.user_id = token_entry[_TOKEN_ENTRY_USER_ID]
@@ -939,8 +930,6 @@ class SubscriptionFinder:
             # not available in /tenants?api-version=2016-06-01
             if not hasattr(t, 'display_name'):
                 t.display_name = None
-            if hasattr(t, 'additional_properties'):  # Remove this line once SDK is fixed
-                t.display_name = t.additional_properties.get('displayName')
             temp_context = self._create_auth_context(tenant_id)
             try:
                 logger.debug("Acquiring a token with tenant=%s, resource=%s", tenant_id, resource)
@@ -1118,13 +1107,14 @@ class CredsCache:
         token_entry = sp_auth.acquire_token(context, resource, sp_id)
         return (token_entry[_TOKEN_ENTRY_TOKEN_TYPE], token_entry[_ACCESS_TOKEN], token_entry)
 
-    def retrieve_secret_of_service_principal(self, sp_id):
+    def retrieve_cred_for_service_principal(self, sp_id):
+        """Returns the secret or certificate of the specified service principal."""
         self.load_adal_token_cache()
         matched = [x for x in self._service_principal_creds if sp_id == x[_SERVICE_PRINCIPAL_ID]]
         if not matched:
             raise CLIError("No matched service principal found")
         cred = matched[0]
-        return cred.get(_ACCESS_TOKEN, None)
+        return cred.get(_ACCESS_TOKEN) or cred.get(_SERVICE_PRINCIPAL_CERT_FILE)
 
     @property
     def adal_token_cache(self):
@@ -1368,13 +1358,3 @@ def _get_authorization_code(resource, authority_url):
     if results.get('no_browser'):
         raise RuntimeError()
     return results
-
-
-def _login_exception_handler(ex):
-    from requests.exceptions import InvalidURL
-    if isinstance(ex, InvalidURL):
-        import traceback
-        from azure.cli.core.azclierror import UnclassifiedUserFault
-        logger.debug('Invalid url when acquiring token\n%s', traceback.format_exc())
-        raise UnclassifiedUserFault(error_msg='Invalid url when acquiring token',
-                                    recommendation='Please make sure the cloud is registered with valid url')

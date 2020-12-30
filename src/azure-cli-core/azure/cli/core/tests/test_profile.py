@@ -1051,32 +1051,6 @@ class TestProfile(unittest.TestCase):
         # assert
         self.assertEqual([], subs)
 
-    @mock.patch('adal.AuthenticationContext', autospec=True)
-    @mock.patch('azure.cli.core._profile._get_authorization_code', autospec=True)
-    def test_find_subscriptions_with_invalid_authority_url(self, _get_authorization_code_mock, mock_auth_context):
-        from requests.exceptions import InvalidURL
-        from azure.cli.core.azclierror import UnclassifiedUserFault
-
-        def mock_acquire(*args, **kwargs):
-            raise InvalidURL(request='http://some.unknown.endpoints')
-
-        cli = DummyCli()
-        mock_auth_context.acquire_token_with_username_password.side_effect = mock_acquire
-        mock_auth_context.acquire_token_with_authorization_code.side_effect = mock_acquire
-        mock_auth_context.acquire_user_code.side_effect = mock_acquire
-        _get_authorization_code_mock.return_value = {
-            'code': 'code1',
-            'reply_url': 'http://localhost:8888'
-        }
-
-        finder = SubscriptionFinder(cli, lambda _, _1, _2: mock_auth_context, None, lambda _: None)
-        with self.assertRaisesRegexp(UnclassifiedUserFault, 'Invalid url when acquiring token'):
-            finder.find_from_user_account(self.user1, 'bar', None, 'http://goo-resource')
-        with self.assertRaisesRegexp(UnclassifiedUserFault, 'Invalid url when acquiring token'):
-            finder.find_through_authorization_code_flow(None, 'https://management.core.windows.net/', 'https:/some_aad_point/common')
-        with self.assertRaisesRegexp(UnclassifiedUserFault, 'Invalid url when acquiring token'):
-            finder.find_through_interactive_flow(None, 'https://management.core.windows.net/')
-
     @mock.patch('azure.cli.core.adal_authentication.MSIAuthenticationWrapper', autospec=True)
     @mock.patch('azure.cli.core.profiles._shared.get_client_class', autospec=True)
     @mock.patch('azure.cli.core._profile._get_cloud_console_token_endpoint', autospec=True)
@@ -1551,7 +1525,7 @@ class TestProfile(unittest.TestCase):
         mock_arm_client.tenants.list.return_value = [TenantStub(self.tenant_id)]
         mock_arm_client.subscriptions.list.side_effect = deepcopy([[self.subscription1], [self.subscription2, sp_subscription1]])
         finder = SubscriptionFinder(cli, lambda _, _1, _2: mock_auth_context, None, lambda _: mock_arm_client)
-        profile._creds_cache.retrieve_secret_of_service_principal = lambda _: 'verySecret'
+        profile._creds_cache.retrieve_cred_for_service_principal = lambda _: 'verySecret'
         profile._creds_cache.flush_to_disk = lambda _: ''
         # action
         profile.refresh_accounts(finder)
@@ -1620,21 +1594,29 @@ class TestProfile(unittest.TestCase):
         self.assertEqual(creds_cache._service_principal_creds, [test_sp])
 
     @mock.patch('azure.cli.core._profile._load_tokens_from_file', autospec=True)
-    def test_credscache_retrieve_sp_secret_with_cert(self, mock_read_file):
+    def test_credscache_retrieve_sp_cred(self, mock_read_file):
         cli = DummyCli()
-        test_sp = {
-            "servicePrincipalId": "myapp",
-            "servicePrincipalTenant": "mytenant",
-            "certificateFile": 'junkcert.pem'
-        }
-        mock_read_file.return_value = [test_sp]
+        test_cache = [
+            {
+                "servicePrincipalId": "myapp",
+                "servicePrincipalTenant": "mytenant",
+                "accessToken": "Secret"
+            },
+            {
+                "servicePrincipalId": "myapp2",
+                "servicePrincipalTenant": "mytenant",
+                "certificateFile": 'junkcert.pem'
+            }
+        ]
+        mock_read_file.return_value = test_cache
 
         # action
         creds_cache = CredsCache(cli, async_persist=False)
         creds_cache.load_adal_token_cache()
 
         # assert
-        self.assertEqual(creds_cache.retrieve_secret_of_service_principal(test_sp['servicePrincipalId']), None)
+        self.assertEqual(creds_cache.retrieve_cred_for_service_principal('myapp'), 'Secret')
+        self.assertEqual(creds_cache.retrieve_cred_for_service_principal('myapp2'), 'junkcert.pem')
 
     @mock.patch('azure.cli.core._profile._load_tokens_from_file', autospec=True)
     @mock.patch('os.fdopen', autospec=True)

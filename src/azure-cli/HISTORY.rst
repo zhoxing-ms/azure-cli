@@ -3,6 +3,212 @@
 Release History
 ===============
 
+2.17.0
+++++++
+
+**ACR**
+
+* Support zone redundancy (#15975)
+* `az acr connected-registry`: New feature for on-prem Azure Container Registry (#16238)
+* `az acr scope-map update`: --add and --remove are deprecated, they are renamed to --add-repo --remove-repo (#16238)
+* `az acr scope-map create/update`: Add support to handle Gateway actions. (#16238)
+* `az acr token create`: support added for gateway actions (#16238)
+
+**AKS**
+
+* Fix: add arguments removed by a previous PR (#16080)
+* `az aks get-credentials`: Clarify documentation for get-credentials (#16011)
+
+**App Service**
+
+* Allow customer to create Python 3.9 function app (#16296)
+* Fix #14583: az webapp up should generate default name if name isn't provided (#16267)
+* Fix: Better error handling when trying to create duplicate ASP in diff location (#16143)
+
+**ARM**
+
+* `az ts`:  Add support for --tags (#16149)
+* `az ts`: Support deleting a single version (#16295)
+* `az provider register`: Add --accept-terms for registering RPaaS (#16194)
+* Fix parsing JSON files with multi-line strings (#15502)
+
+**ARO**
+
+* `az aro delete`: Add RBAC validation on cluster deletion (#16101)
+* `az aro update`: Add RBAC validation on cluster update (#16213)
+* Ensure worker_profile is not None before getting the subnets from (#16309)
+
+**Backup**
+
+* `az backup job list`: Solve -o table bug and added backup_management_type as command input (#16304)
+
+**Batch**
+
+* Upgrade data plane to [azure batch 10.0.0](https://pypi.org/project/azure-batch/10.0.0/) (#16156)
+* [BREAKING CHANGE] az batch job task-counts: Change the output from a JSON object returning task counts to a complex JSON object that includes task counts (`taskCounts`) as well as task slot counts (`taskSlotCounts`). (#16156)
+
+**Compute**
+
+* New license type RHEL_ELS_6 (#16012)
+* Adopt track2 SDK, azure-mgmt-compute==18.0.0 (#15750)
+
+**Container**
+
+* Fix misspelling in `az container create` CLI example text. (#16252)
+
+**DataBoxEdge**
+
+* New command module: support for data-box-edge devices and management (#16193)
+
+**IoT**
+
+* Update device key generation (#16129)
+* Update identity-enabled hub tests to fix endpoint RBAC issues (#16128)
+
+**Key Vault**
+
+* `az keyvault key import`: Support `--kty` for importing BYOK keys (#16223)
+
+**Monitor**
+
+* `az monitor metrics alert create`: Improve error message to give more actionable insight (#16255)
+
+**Network**
+
+* `az network private-endpoint create`: Add more declaration of '--subnet' and '--private-connection-resource-id' (#16174)
+* Change validator of application-gateway ssl-cert create (#16256)
+* Migrate network to track2 SDK (#16245)
+* Fix bug for "az network traffic-manager profile create" when using "--routing-method MultiValue" (#16300)
+
+**Profile**
+
+* Fix "missing secret or certificate in order to authenticate through a service principal" (#16219)
+
+**Role**
+
+* `az ad sp create-for-rbac`: Deprecate creating Contributor role assignment by default (#16081)
+
+**Security**
+
+* Add secure score commands (#16198)
+* Fix update alert command and support new value (#16291)
+
+**SQL**
+
+* `az sql dw update`: do not accept backup-storage-redundancy argument (#16326)
+* `az sql db update`: update backup storage redundancy as requested from command (#16326)
+
+**Storage**
+
+* Fix issue #15965: Clarify how to remove multiple legal hold tags with `az storage container legal-hold [clear|set]` (#16167)
+* `az storage account encryption-scope`: GA support (#16270)
+* Fix issue #9959: Trying to download a snapshot version of a file share fails with ResourceNotFound (#16275)
+
+**Synapse**
+
+* Add new cmdlets az synapse sql ad-admin show, create, update, delete (#16241)
+* Add new cmdlet az synapse workspace firewall-rule update (#16241)
+* Add new cmdlets az synapse sql audit-policy show, update (#16241)
+* Add integration runtime related cmdlets (#15498)
+
+2.16.0
+++++++
+
+**ACR**
+
+* Update description for KEK param (#15866)
+
+**AKS**
+
+* `az aks nodepool add/update/upgrade`: Take max surge parameter (#15740)
+* Add support for AGIC addon (#15993)
+* Change MSI cluster to default (#16057)
+
+**APIM**
+
+* `az apim restore`: New command to restore a backup of an API Management service (#15933)
+
+**App Service**
+
+* Fix #14857: Let users update webapp config even with access restriction (#15945)
+* `az functionapp create`: Accept `--runtime python` and  `--runtime-version 3.9` as Azure Functions v3 parameter (#16020)
+* Fix #16041: az webapp config ssl create results in unknown error (#16124)
+
+**ARM**
+
+* `az deployment-scripts`: Remove preview flag (#16019)
+
+**Backup**
+
+* Fix #14976: CLI error improvements for ValueError and AttributeError cases (#15861)
+* `az backup protection undelete`: Add support for AzureWorkload protection undelete using CLI (#15979)
+* Fix Bad Request Error for Correct Workload Type Input (#15999)
+
+**CDN**
+
+* Add preview multi-origin support. (#15348)
+* Add BYOC auto-rotation. (#15348)
+
+**Key Vault**
+
+* `az keyvault key/secret list`: Add a parameter `--include-managed` to list managed resources (#15926)
+
+**Monitor**
+
+* `az monitor metrics alert create`: Support dynamic thresholds for condition parameter (#15820)
+* `az monitor metrics alert update`: Support dynamic thresholds for condition parameter (#15820)
+* `az monitor metrics alert dimension create`: Build a metric alert rule dimension (#15820)
+* `az monitor metrics alert condition create`: Build a metric alert rule condition (#15820)
+
+**MySQL**
+
+* Add MySQL version upgrade CLI (#15977)
+
+**NetAppFiles**
+
+* `az netappfiles account ad add`: Two optional parameters added, aes_encryption and ldap_signing (#15934)
+* `az netappfiles account backup-policy update`: Three optional parameters added named tags, type and id (#15934)
+* `az netappfiles snapshot policy create`: An optional parameter added named provisioning_state (#15934)
+
+**Network**
+
+* `az network network watcher configure`: Fix NetworkWatcherCountLimitReached error caused by case sensitivity of location value (#15801)
+* `az network application-gateway http-listener`: Fix bug that cannot create and update with WAF policy name (#15929)
+* `az network route-table`: Deprecate route table V1 (#16039)
+* `az network cross-region-lb`: Support cross-region load balancer (#16131)
+* `az network express-route port generate-loa`: New command to generate and download the PDF letter of authorization for a ExpressRoutePort (#16135)
+
+**Packaging**
+
+* Add Ubuntu Groovy package (#16132)
+
+**RDBMS**
+
+* Add single server show-connection-string and tests for local-context commands, server creation (#15844)
+
+**Role**
+
+* Add long-summary/warning for commands generating credentials (#15825)
+
+**Search**
+
+* Add SKU option (#15895)
+
+**Service Fabric**
+
+* Update SF app docs. only support for arm deployed resources (#16003)
+
+**Synapse**
+
+* Support synapse sql dw cmdlets and update az synapse workspace create cmdlet (#16095)
+
+2.15.1
+++++++
+
+**Profile**
+
+* Hotfix: Fix #15961: az login: UnboundLocalError: local variable 'token_entry' referenced before assignment
+
 2.15.0
 ++++++
 
@@ -502,7 +708,7 @@ Added Cluster commands and trusted_service_access_enabled parameter for Networkr
 **Storage**
 
 * `az storage blob list`: Support OR properties with new api version (#14832)
- 
+
 2.11.0
 ++++++
 
