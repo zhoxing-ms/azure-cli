@@ -31,5 +31,5 @@ Supported Systems: `Windows`, `Linux`, `Mac` <br/>
 ![avatar](https://github.com/zhoxing-ms/image/blob/master/Screenshot%202021-01-06%20223923.png)
 
 ### Feedback
-Please do play with it and share any feedback or suggestions. 
+Please do play with it and share any feedback or suggestions. <br/>
 If you think there are some inaccuracies in the recommendation, please let us know what you expect to be recommended, we will try to solve these problems in the future.
