@@ -29,3 +29,7 @@ Supported Systems: `Windows`, `Linux`, `Mac` <br/>
 3. When you may be in a common E2E scenario, it will recommend the next set of command combinations in a specific scenario
 ![avatar](https://github.com/zhoxing-ms/image/blob/master/Screenshot%202021-01-06%20223800.png)
 ![avatar](https://github.com/zhoxing-ms/image/blob/master/Screenshot%202021-01-06%20223923.png)
+
+### Feedback
+Please do play with it and share any feedback or suggestions. 
+If you think there are some inaccuracies in the recommendation, please let us know what you expect to be recommended, we will try to solve these problems in the future.
