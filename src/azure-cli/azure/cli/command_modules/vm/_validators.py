@@ -1568,7 +1568,6 @@ def process_vmss_create_namespace(cmd, namespace):
             '--disable-overprovision': namespace.disable_overprovision,
             '--health-probe': namespace.health_probe,
             '--host-group': namespace.host_group,
-            '--nat-pool-name': namespace.nat_pool_name,
             '--scale-in-policy': namespace.scale_in_policy,
             '--user-data': namespace.user_data
         }
