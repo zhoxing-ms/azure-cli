@@ -977,7 +977,7 @@ def load_arguments(self, _):
 
     for scope in ['vm create', 'vmss create']:
         with self.argument_context(scope) as c:
-            c.argument('location', get_location_type(self.cli_ctx), help='Location in which to create VM and related resources. If default location is not configured, will default to the resource group\'s location')
+            c.argument('location', get_location_type(self.cli_ctx), help='Location in which to create VM and related resources. If default location is not configured, will default to the resource group\'s location. If you want to use the region with lower cost and better performance recommended by us, please try to use parameter "--region-recommendation" or enable switch "az config set region_recommendation=true".')
             c.argument('tags', tags_type)
             c.argument('no_wait', help='Do not wait for the long-running operation to finish.')
             c.argument('validate', options_list=['--validate'], help='Generate and validate the ARM template without creating any resources.', action='store_true')
@@ -992,6 +992,7 @@ def load_arguments(self, _):
             c.argument('disable_integrity_monitoring', action='store_true', min_api='2020-12-01', help='Disable the default behavior of installing guest attestation extension and enabling System Assigned Identity for Trusted Launch enabled VMs and VMSS.')
             c.argument('os_disk_security_encryption_type', arg_type=get_enum_type(self.get_models('SecurityEncryptionTypes')), min_api='2021-11-01', help='Specify the encryption type of the OS managed disk.')
             c.argument('os_disk_secure_vm_disk_encryption_set', min_api='2021-11-01', help='Specify the customer managed disk encryption set resource ID or name for the managed disk that is used for customer managed key encrypted Confidential VM OS disk and VM guest blob.')
+            c.argument('region_recommendation', action='store_true', help="Get region recommendations with lower cost and higher availability.")
 
         with self.argument_context(scope, arg_group='Authentication') as c:
             c.argument('generate_ssh_keys', action='store_true', help='Generate SSH public and private key files if missing. The keys will be stored in the ~/.ssh directory')

@@ -896,7 +896,7 @@ def create_vm(cmd, vm_name, resource_group_name, image=None, size='Standard_DS1_
               data_disk_delete_option=None, user_data=None, capacity_reservation_group=None, enable_hibernation=None,
               v_cpus_available=None, v_cpus_per_core=None, accept_term=None, disable_integrity_monitoring=False,
               os_disk_security_encryption_type=None, os_disk_secure_vm_disk_encryption_set=None,
-              disk_controller_type=None):
+              disk_controller_type=None, region_recommendation=None):
 
     from azure.cli.core.commands.client_factory import get_subscription_id
     from azure.cli.core.util import random_string, hash_string
@@ -910,6 +910,27 @@ def create_vm(cmd, vm_name, resource_group_name, image=None, size='Standard_DS1_
                                                                 build_vm_windows_log_analytics_workspace_agent)
     from azure.cli.command_modules.vm._vm_utils import ArmTemplateBuilder20190401
     from msrestazure.tools import resource_id, is_valid_resource_id, parse_resource_id
+
+    recommended_region_maps = {
+        'germanywestcentral': 'northeurope'
+    }
+
+    recommended_region = None
+    if location in recommended_region_maps.keys():
+        recommended_region = recommended_region_maps[location]
+
+    if recommended_region:
+        if not region_recommendation:
+            logger.warning('There is a better choice "%s" for the region you use, it\'s cost is lower. '
+                           'If you want to use the region we recommend during the creation process, '
+                           'please use the parameter "--region-recommendation" or '
+                           '"az config set region_recommendation=true" to enable this feature.', recommended_region)
+        else:
+            from knack.prompting import prompt_y_n
+            prompt_message = 'There is a better region "{}" with lower cost. Do you want to use this region instead?'.\
+                format(recommended_region)
+            if prompt_y_n(prompt_message, default="n"):
+                location = recommended_region
 
     # In the latest profile, the default public IP will be expected to be changed from Basic to Standard.
     # In order to avoid breaking change which has a big impact to users,
