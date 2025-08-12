@@ -179,21 +179,17 @@ The repository enforces several checks before code integration:
 ## Specific Coding Guidelines for PR review
 
 ### 1. Rule of help messages
----
-applyTo: "src/azure-cli/azure/cli/command_modules/**/_params.py"
----
 Firstly, find the help messages, their format is `...help='{help_message}'...` or `....help="{help_message}"...`, {help_message} is the placeholder
 Next, you need to review the format of the found help messages according to the following rules:
 1. If the help message does not start with a verb, skip this check. Otherwise, check the verb at the beginning of help message
 2. Confirm if the verb is in the first person voice, such as the third person voice of 'Enables......' is not compliant
 3. Confirm if the verb is in the active voice, such as the passive voice 'Enabled......' is not compliant
+This rule only applys to file path: "src/azure-cli/azure/cli/command_modules/**/_params.py"
 
 ### 2. Confirmation for dangerous commands
----
-applyTo: "src/azure-cli/azure/cli/command_modules/**/commands.py"
----
 Firstly, find the command signature, their format is `... g.custom_command('{command_signature}', ...)...` or `... g.command('{command_signature}', ...)...`, {command_signature} is the command signature
 Next, you need to determine whether the command signature is a dangerous operation, such as `delete`, `remove`, `stop` operation which will break or remove resources. If so, You need to suggest adding the flag `confirmation=True`, such as `g.custom_command('{command_signature}', ..., )...`
+This rule only applys to file path: "src/azure-cli/azure/cli/command_modules/**/commands.py"
 
 ### 3. Common code best practices
 - ​​Use 4 spaces for indentation​​, never mix tabs and spaces
